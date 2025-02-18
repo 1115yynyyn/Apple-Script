@@ -1,0 +1,48 @@
+tell application "Microsoft Outlook"
+	set emailList to {} -- 用來儲存所有寄件人
+	set allMessages to messages of inbox -- 你可以根據需要更改資料夾，這裡是收件匣
+	if (count of allMessages) is greater than 0 then
+		repeat with msg in allMessages
+			try
+				-- 嘗試獲取發件人信息
+				set senderInfo to sender of msg
+				if senderInfo is not missing value then
+					try
+						-- 獲取發件人地址
+						set senderEmail to address of senderInfo
+						-- 如果emailList中沒有這個email才加入
+						if senderEmail is not in emailList then
+							set end of emailList to senderEmail
+						end if
+					on error
+						-- 如果沒有有效地址，添加錯誤訊息
+						set end of emailList to "Error: No address available"
+					end try
+				else
+					-- 如果沒有發件人信息，記錄該狀態
+					set end of emailList to "Error: No sender info"
+				end if
+			on error errMsg
+				-- 如果處理郵件時發生錯誤，記錄錯誤
+				set end of emailList to "Error: " & errMsg
+			end try
+		end repeat
+	else
+		set emailList to {"No messages found in inbox"}
+	end if
+	-- 將 emailList 中的內容轉換成字串，並且使用逗號來分隔
+	set textResult to my join_with_comma(emailList)
+end tell
+
+-- 創建一個自定義函數，將列表用逗號連接
+on join_with_comma(theList)
+	set textResult to ""
+	repeat with anItem in theList
+		set textResult to textResult & anItem & ", "
+	end repeat
+	-- 去掉最後多餘的逗號和空格
+	if (length of textResult) > 0 then
+		set textResult to text 1 through -3 of textResult
+	end if
+	return textResult
+end join_with_comma
